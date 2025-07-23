@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <!-- Meta Tags for App-Like Feel -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+
+    <!-- === PWA Links === -->
+    <meta name="theme-color" content="#2563eb">
+    <link rel="manifest" href="manifest.json">
+    <!-- ================= -->
+
+    <title>Score Keeper</title>
+    
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <style>
+        /* A little extra style to ensure the background covers the whole screen on mobile */
+        body, html {
+            height: 100%;
+            font-family: sans-serif;
+        }
+        /* Hide number input arrows for a cleaner look */
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+          -webkit-appearance: none;
+          margin: 0;
+        }
+        input[type=number] {
+          -moz-appearance: textfield;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 dark:bg-gray-900">
+
+    <main class="min-h-screen w-full flex flex-col items-center justify-center p-4">
+        <div class="w-full max-w-4xl">
+            <h1 class="text-4xl font-bold text-center text-gray-800 dark:text-white mb-2">
+              Score Keeper
+            </h1>
+            <p class="text-center text-gray-600 dark:text-gray-400 mb-6">
+              Keep track of scores for your favorite board games.
+            </p>
+
+            <!-- Setup View -->
+            <div id="setup-view" class="max-w-md mx-auto">
+                <div class="bg-white dark:bg-gray-800 shadow-lg rounded-xl p-6 m-4">
+                    <h2 class="text-2xl font-bold text-center text-gray-800 dark:text-white mb-6">Game Setup</h2>
+                    <div class="space-y-6">
+                        <div>
+                            <label for="numPlayers" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                How many players?
+                            </label>
+                            <input id="numPlayers" type="number" value="2" min="1" max="10" class="w-full px-4 py-3 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white">
+                        </div>
+                        <div id="player-names-container" class="space-y-4">
+                            <!-- Player name inputs will be generated here by JS -->
+                        </div>
+                        <button id="start-game-btn" type="button" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition duration-300 ease-in-out transform hover:scale-105">
+                            Start Game
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Scoring View (Initially Hidden) -->
+            <div id="scoring-view" class="hidden">
+                 <div class="bg-white dark:bg-gray-800 shadow-lg rounded-xl p-6 m-4">
+                    <h2 class="text-2xl font-bold text-center text-gray-800 dark:text-white mb-6">Scorecard</h2>
+                    <div class="overflow-x-auto">
+                        <table id="score-table" class="w-full text-left text-sm text-gray-500 dark:text-gray-400">
+                            <!-- Table content will be populated by JavaScript -->
+                        </table>
+                    </div>
+                    <div class="mt-6 flex flex-col sm:flex-row gap-4">
+                        <button id="add-round-btn" class="sm:w-2/3 w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition duration-300 ease-in-out transform hover:scale-105">
+                            Add Round Scores
+                        </button>
+                        <button id="new-game-btn" class="sm:w-1/3 w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg transition duration-300 ease-in-out transform hover:scale-105">
+                            New Game
+                        </button>
+                    </div>
+                 </div>
+            </div>
+             <footer class="text-center mt-8 text-sm text-gray-500 dark:text-gray-400">
+                <p>Score Keeper App</p>
+            </footer>
+        </div>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- STATE MANAGEMENT ---
+            let players = []; // This will hold our player data, e.g., [{ name: 'Alice', scores: [10, 20] }]
+
+            // --- DOM ELEMENT REFERENCES ---
+            const setupView = document.getElementById('setup-view');
+            const scoringView = document.getElementById('scoring-view');
+            const numPlayersInput = document.getElementById('numPlayers');
+            const playerNamesContainer = document.getElementById('player-names-container');
+            const scoreTable = document.getElementById('score-table');
+            const addRoundBtn = document.getElementById('add-round-btn');
+            const newGameBtn = document.getElementById('new-game-btn');
+            const startGameBtn = document.getElementById('start-game-btn');
+
+            // --- FUNCTIONS ---
+
+            // Generates the player name input fields based on the number selected.
+            const generatePlayerNameInputs = () => {
+                const count = parseInt(numPlayersInput.value, 10);
+                playerNamesContainer.innerHTML = ''; // Clear any existing inputs first
+                for (let i = 0; i < count; i++) {
+                    const div = document.createElement('div');
+                    div.innerHTML = `
+                        <label for="player-${i}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Player ${i + 1} Name
+                        </label>
+                        <input
+                            id="player-${i}"
+                            type="text"
+                            placeholder="Enter name for Player ${i + 1}"
+                            class="w-full px-4 py-3 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white"
+                        />
+                    `;
+                    playerNamesContainer.appendChild(div);
+                }
+            };
+
+            // Renders the entire scorecard table from scratch based on the current 'players' data.
+            const renderScorecard = () => {
+                scoreTable.innerHTML = ''; // Clear the table before redrawing
+
+                // 1. Create Table Header
+                const thead = document.createElement('thead');
+                thead.className = "text-xs text-gray-700 dark:text-gray-200 uppercase bg-gray-50 dark:bg-gray-700";
+                let headerRowHtml = `<th scope="col" class="px-2 py-3 rounded-l-lg">Round</th>`;
+                players.forEach(p => {
+                    headerRowHtml += `<th scope="col" class="px-2 py-3 text-center truncate">${p.name}</th>`;
+                });
+                headerRowHtml += `<th class="rounded-r-lg"></th>`;
+                thead.innerHTML = `<tr>${headerRowHtml}</tr>`;
+                scoreTable.appendChild(thead);
+
+                // 2. Create Table Body (for past rounds)
+                const tbody = document.createElement('tbody');
+                const numRounds = players.length > 0 ? players[0].scores.length : 0;
+                for (let i = 0; i < numRounds; i++) {
+                    const row = document.createElement('tr');
+                    row.className = "border-b dark:border-gray-700";
+                    let rowHtml = `<td class="px-2 py-3 font-medium text-gray-900 dark:text-white">${i + 1}</td>`;
+                    players.forEach(p => {
+                        rowHtml += `<td class="px-2 py-3 text-center">${p.scores[i]}</td>`;
+                    });
+                    row.innerHTML = rowHtml;
+                    tbody.appendChild(row);
+                }
+                scoreTable.appendChild(tbody);
+
+                // 3. Create Table Footer (for score input and totals)
+                const tfoot = document.createElement('tfoot');
+                
+                // Input Row
+                let inputRowHtml = `<td class="px-2 py-3 font-bold text-gray-900 dark:text-white">Add Score</td>`;
+                players.forEach((_, index) => {
+                    inputRowHtml += `
+                        <td class="px-1 py-2">
+                            <input
+                              type="number"
+                              placeholder="0"
+                              class="score-input w-full text-center px-2 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white"
+                            />
+                        </td>`;
+                });
+                
+                // Total Row
+                let totalRowHtml = `<td class="px-2 py-4 rounded-bl-lg">Total</td>`;
+                players.forEach(p => {
+                    const total = p.scores.reduce((sum, score) => sum + score, 0);
+                    totalRowHtml += `<td class="px-2 py-4 text-center text-lg">${total}</td>`;
+                });
+                totalRowHtml += `<td class="rounded-br-lg"></td>`;
+
+                tfoot.innerHTML = `
+                    <tr class="bg-gray-50 dark:bg-gray-700/50">${inputRowHtml}</tr>
+                    <tr class="font-bold text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-900">${totalRowHtml}</tr>
+                `;
+                scoreTable.appendChild(tfoot);
+            };
+            
+            // --- EVENT LISTENERS ---
+
+            // Update player name inputs when the number of players is changed.
+            numPlayersInput.addEventListener('change', generatePlayerNameInputs);
+
+            startGameBtn.addEventListener('click', () => {
+                players = [];
+                const nameInputs = playerNamesContainer.querySelectorAll('input');
+                nameInputs.forEach((input, index) => {
+                    const name = input.value.trim() === '' ? `Player ${index + 1}` : input.value.trim();
+                    players.push({ name: name, scores: [] });
+                });
+                
+                setupView.classList.add('hidden');
+                scoringView.classList.remove('hidden');
+                renderScorecard();
+            });
+
+            // Handle adding a new round of scores.
+            addRoundBtn.addEventListener('click', () => {
+                const scoreInputs = scoreTable.querySelectorAll('.score-input');
+                scoreInputs.forEach((input, index) => {
+                    const score = parseInt(input.value, 10) || 0;
+                    if (players[index]) {
+                        players[index].scores.push(score);
+                    }
+                });
+                renderScorecard(); // Re-render the table with new scores and fresh inputs
+            });
+
+            // Handle starting a new game from the scorecard view.
+            newGameBtn.addEventListener('click', () => {
+                players = [];
+                scoringView.classList.add('hidden');
+                setupView.classList.remove('hidden');
+                numPlayersInput.value = 2; // Reset to default
+                generatePlayerNameInputs();
+            });
+
+            // --- INITIALIZATION ---
+            // Generate the initial name inputs for 2 players when the page first loads.
+            generatePlayerNameInputs();
+        });
+
+        // --- PWA Service Worker Registration ---
+        if ('serviceWorker' in navigator) {
+          window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/sw.js').then(registration => {
+              console.log('ServiceWorker registration successful with scope: ', registration.scope);
+            }, err => {
+              console.log('ServiceWorker registration failed: ', err);
+            });
+          });
+        }
+    </script>
+
+</body>
+</html>
