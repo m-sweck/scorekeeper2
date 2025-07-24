@@ -1,9 +1,11 @@
 // Define a name for the cache
-const CACHE_NAME = 'score-keeper-cache-v1';
+const CACHE_NAME = 'score-keeper-cache-v2'; // Changed version to force update
 // List the files to be cached
 const urlsToCache = [
-  './scorekeeper.html'
-  // Note: Since the CSS and JS are inside the HTML, we only need to cache the one file.
+  './scorekeeper.html',
+  './manifest.json',
+  './icons/icon-192x192.png',
+  './icons/icon-512x512.png'
 ];
 
 // 1. Installation
@@ -16,6 +18,23 @@ self.addEventListener('install', event => {
         console.log('Opened cache');
         return cache.addAll(urlsToCache);
       })
+  );
+});
+
+// This event is triggered when the new service worker activates.
+// It cleans up old, unused caches.
+self.addEventListener('activate', event => {
+  const cacheWhitelist = [CACHE_NAME];
+  event.waitUntil(
+    caches.keys().then(cacheNames => {
+      return Promise.all(
+        cacheNames.map(cacheName => {
+          if (cacheWhitelist.indexOf(cacheName) === -1) {
+            return caches.delete(cacheName);
+          }
+        })
+      );
+    })
   );
 });
 
