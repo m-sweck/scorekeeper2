@@ -1,8 +1,8 @@
 // Define a name for the cache
-const CACHE_NAME = 'score-keeper-cache-v2'; // Changed version to force update
+const CACHE_NAME = 'score-keeper-cache-v3'; // Changed version to force update
 // List the files to be cached
 const urlsToCache = [
-  './scorekeeper.html',
+  './index.html', // Renamed from scorekeeper.html
   './manifest.json',
   './icons/icon-192x192.png',
   './icons/icon-512x512.png'
